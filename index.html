@@ -1,1 +1,569 @@
-Hello World
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Game</title>
+
+    <link href="https://fonts.googleapis.com/css?family=Rammetto+One" rel="stylesheet">
+
+    <style type="text/css">
+        h1{
+            font-family: 'Rammetto One', cursive;
+        }
+
+        body{
+            color: #d62409;
+        }
+
+        p{
+            font-family: 'Rammetto One', cursive;
+        }
+
+        #playerLives {
+            text-align: left;
+            color: #d62409;
+            font: 20px 'Rammetto One', cursive;
+        }
+
+        #container {
+            width: 600px;
+            margin: 20px auto;
+        }
+
+        #score {
+            text-align: right;
+            color: #d62409;
+            font: 20px 'Rammetto One', cursive;
+
+        }
+
+        #game {
+            position: relative;
+            border: 2px solid #990303;
+            height: 600px;
+            background: url(http://1.bp.blogspot.com/-pxJUIz2n2vc/T3e1PNZZ1NI/AAAAAAAAAU0/ucUXs1Rm3yI/s1600/black+stars+wallpaper4.gif);
+        }
+
+        #blocks1 {
+            margin: 20px;
+        }
+
+        .block1 {
+            width: 77px;
+            height: 20px;
+            border: 1px solid #b8b3bd;
+            float: left;
+            background: url(https://thumbs.dreamstime.com/t/red-glass-broken-space-background-47753950.jpg);
+        }
+
+        #ball {
+            border-radius: 25px;
+            background: url(https://cdn.pixabay.com/photo/2017/07/22/09/50/fireball-2528254__180.jpg);
+            width: 25px;
+            height: 25px;
+            position: absolute;
+            border: 2px double orange;
+        }
+
+        #paddle{
+            width: 125px;
+            height: 20px;
+            background: url(https://2.bp.blogspot.com/-61t6so_GcQE/UG2BXOVJ66I/AAAAAAAALHE/OZniVbgo_Js/s1600/Fire+Backgrounds+1950x2094+HD+Collection+photoshop+fire+background+PSD+fire+background+suresh+koyal+photoshop+PSD+background+photo+studio+fire+photo+studio+picsvan.blogspot.com+%289%29.jpg);
+            position: absolute;
+            border: 2px solid orange;
+        }
+
+        .block2 {
+            width: 77px;
+            height: 20px;
+            border: 1px solid #b8b3bd;
+            float: right;
+            background: url(https://thumbs.dreamstime.com/t/green-nebula-15431646.jpg);
+        }
+
+        .block3 {
+            width: 77px;
+            height: 20px;
+            border: 1px solid #b8b3bd;
+            float: left;
+            background: url(http://images.freeimages.com/images/premium/large-thumbs/9063/9063850-blue-space-stars.jpg);
+        }
+
+        #game-over {
+            visibility: visible;
+        }
+    </style>
+</head>
+<body>
+
+    <div id="container">
+        <h1>Breakout</h1>
+        <p>Use  the arrow keys to move the paddle. If the ball hits the bottom you lose a life, Hit the bricks to gain points and win!!</p>
+        <div id="score">
+            Score <span id="player-score">0</span>
+        </div>
+        <div id="playerLives">
+            Lives <span id="player-lives">3</span>
+        </div>
+      <!--  <div id="game-over">You lost!!!!
+            <button onclick="restartGame()">Restart</button>       
+        </div> -->
+        
+        <element onclick="myscript">
+
+        <div id="game">
+            <div id="blocks1">
+                <div class="block1"></div>
+                <div class="block1"></div>
+                <div class="block1"></div>
+                <div class="block1"></div>
+                <div class="block1"></div>
+                <div class="block1"></div>
+                <div class="block1"></div>
+            </div>
+
+            <div id="blocks2">
+                <div class="block2"></div>
+                <div class="block2"></div>
+                <div class="block2"></div>
+                <div class="block2"></div>
+                <div class="block2"></div>
+                <div class="block2"></div>
+                <div class="block2"></div>
+            </div>
+
+            <div id="blocks3">
+                <div class="block3"></div>
+                <div class="block3"></div>
+                <div class="block3"></div>
+                <div class="block3"></div>
+                <div class="block3"></div>
+                <div class="block3"></div>
+                <div class="block3"></div>
+            </div>
+
+
+            <div id="ball"></div>
+
+            <div id="paddle"></div>
+        </div>
+    </div>
+
+    <script type="text/javascript">
+        /**
+        Setup out game state
+        */
+        // Number of lives a player has at the start of the game
+        var playerStartGameLives = 3;
+        var ballStartPosition = {
+            top: 530,
+            left: 350
+        };
+        var ballStartVelocity = {
+            x: -3, // Start moving up
+            y: -3 // and to the left
+        };
+        var paddleStartPosition = {
+            left: 230,
+            top: 560
+        };
+
+        // The players' current score
+        var playerScore;;
+        // The players' current number of lives
+        var playerLives;
+        // The current ball position
+        var ballPosition = {};
+        // The current ball velocity (how fast and which direction it's moving)
+        var ballVelocity = {};
+        // The current paddle position
+        var paddlePosition = {}
+        // Store which key is currently pressed down ("left" | "right" | null)
+        var keyDown = null;
+        // How fast the ball speed is increased by
+        var gameSpeed = 1;
+
+        // Get references to the various game HTML (DOM) elements. Using Javascript we can manipulate
+        // the HTML elements. For example, we can change the color of an element or move an element
+        // up and down
+        var playerScoreEl = document.getElementById("player-score");
+        var playerLivesEl = document.getElementById("player-lives");
+        var paddleEl = document.getElementById("paddle");
+        var ballEl = document.getElementById("ball");
+        var restartEl = document.getElementById("game-over")
+
+        /**
+        Reset the game state. We need to do this at the start of the 1st game and
+        at the start of every new game (such as when a game over happens)
+        */
+        function resetGame() {
+            playerScore = 0;
+            gameSpeed = 1;
+
+            // ************* Reset the playerLives back to playerStartGameLives so the player has new lives when the game is reset
+            // playerStartGameLives = 3
+            playerLives = 3
+            updateScoreUI(playerScore)
+            updateLivesUI(playerLives)
+            resetBallAndPaddle();
+            showAllBlock();
+
+            // TODO 11. Update the score UI and the lives UI so they reset back
+            // to the new game values (set above)
+        }
+
+        function gameOver() {
+            alert("game over")
+            resetGame();
+        }
+
+        function restartGame() {
+            game-over
+        }
+
+        /***
+        At the start of the game or when a player loses a life, we want to reset the position of the paddle and
+        ball
+        */
+        function resetBallAndPaddle() {
+            paddlePosition = {
+                left: paddleStartPosition.left,
+                top: paddleStartPosition.top
+            };
+            ballPosition = {
+                left: ballStartPosition.left,
+                top: ballStartPosition.top
+            };
+            ballVelocity = {
+                x: ballStartVelocity.x,
+                y: ballStartVelocity.y,
+            };
+        }
+
+        function showAllBlock() {
+            // Show the blue block
+            var blocksInBlock3 = document.getElementsByClassName("block3");
+            for (var i = 0; i < blocksInBlock3.length; i++) {
+                var block = blocksInBlock3[i];
+                // Set the block visibility to "visible".
+                block.style["visibility"] = "visible"
+            }
+
+            var blocksInBlock2 = document.getElementsByClassName("block2");
+            for (var i = 0; i < blocksInBlock2.length; i++) {
+                var block = blocksInBlock2[i];
+                // Set the block visibility to "visible".
+                block.style["visibility"] = "visible"
+            }
+
+            var blocksInBlock1 = document.getElementsByClassName("block1");
+            for (var i = 0; i < blocksInBlock1.length; i++) {
+                var block = blocksInBlock1[i];
+                // Set the block visibility to "visible".
+                block.style["visibility"] = "visible"
+            }
+
+
+
+            // TODO 10: show the red and green block
+        }
+
+        /**
+        Callback function, executed when a key is pressed down
+        */
+        function keyDownHandler(event) {
+            // The event paramater passed into this function contains details about the keypress.
+            // We can check the keyCode attribute to see which key was pressed. Each key has a numeric
+            // code. 39 is the right arrow key
+            if (event.keyCode == 39) {
+                event.preventDefault();
+                keyDown = "right";
+            }
+            else if (event.keyCode == 37) {
+                event.preventDefault();
+                keyDown = "left";
+            }
+        }
+
+        /**
+        Callback function, executed when a key is release
+        */
+        function keyUpHandler(event) {
+            // Key was release, therefore no key is down
+            keyDown = null;
+        }
+
+        function updateScoreUI(score) {
+            console.log(score)
+            playerScoreEl.innerHTML = score;
+        }
+
+        function updateLivesUI(lives) {
+            console.log(lives);
+            playerLivesEl.innerHTML = lives;
+            // TODO 3. Update the lives in the UI. You should call this function
+            // each time the player loses a life. This will be similar to the
+            // way score is updated above. You will first need to get a reference
+            // to the live HTML element using document.getElementById. There
+            // is similar code above that does this.
+        }
+
+        // https://stackoverflow.com/questions/21089959/detecting-collision-of-rectangle-with-circle#
+        // http://jsfiddle.net/m1erickson/n6U8D/
+        function isCollideWithBall(rectangle) {
+            var ballRadius = 14.5;
+            var ballCenterX = ballPosition.left + ballRadius;
+            var ballCenterY = ballPosition.top + ballRadius;
+
+            var distX = Math.abs(ballCenterX - rectangle.left-rectangle.width/2);
+            var distY = Math.abs(ballCenterY - rectangle.top-rectangle.height/2);
+
+            if (distX > (rectangle.width/2 + ballRadius)) { return false; }
+            if (distY > (rectangle.height/2 + ballRadius)) { return false; }
+
+            if (distX <= (rectangle.width/2)) { return true; }
+            if (distY <= (rectangle.height/2)) { return true; }
+
+            var dx=distX-rectangle.width/2;
+            var dy=distY-rectangle.height/2;
+            return (dx*dx+dy*dy<=(ballRadius*ballRadius));
+        }
+
+        function checkBallCollisionWithSingleBlock(block) {
+            // If a block is visible we need to check if the ball has collided
+            // with it
+            if (block.style["visibility"] == "visible") {
+                // First we need to get the dimensions of the block as our
+                // collision detection function needs these
+                var blockDimensions = {
+                    left: block.offsetLeft,
+                    top: block.offsetTop,
+                    width: 77,
+                    height: 20
+                };
+
+                if (isCollideWithBall(blockDimensions) == true) {
+                    // The ball hit the block so we need to hide the block and
+                    // bouce the ball back
+                    // TODO 7:. Set the block visibility to "hidden". See the
+                    // showAllBlock() function for similar code
+                    ballPosition.left = ballPosition.left - ballVelocity.x;
+                    ballPosition.top = ballPosition.top - ballVelocity.y;
+                    ballVelocity.y = ballVelocity.y * -1;
+
+                    block.style["visibility"] = "hidden"
+
+                    playerScore = playerScore + 10
+                    updateScoreUI(playerScore)
+
+
+                    // TODO 8: Add 10 to the player's score and call the
+                    // updateScoreUI() function to update the score in the game
+
+                    // TODO 12: Play a sound effect as the ball has hit the brick
+                    playBlockCrashSound();
+                    return true;
+                }
+                else {
+                    return false;
+                }
+            }
+            else {
+                return false;
+            }
+        }
+
+        function playBlockCrashSound() {
+            var audio = new Audio('sounds/23338__altemark__pong.wav')
+            audio.play();
+        }
+
+        function checkBallCollisionWithBlocks() {
+            // Check is the ball is colliding with the blue blocks
+            // We first get a reference to all the blocks that have the css
+            // class "block3" (this will be the blue blocks).
+            // blocksInBlock3 now contains an array (a list) of all of the HTML
+            // block elements. Using a for loop, we can itterate over the array
+            // of blocks and check if each one is colliding with the ball
+            var blocksInBlock3 = document.getElementsByClassName("block3");
+            for (var i = 0; i < blocksInBlock3.length; i++) {
+                var block = blocksInBlock3[i];
+                if (checkBallCollisionWithSingleBlock(block)) {
+                    return;
+                }
+            }
+            var blocksInBlock2 = document.getElementsByClassName("block2");
+            for (var i = 0; i < blocksInBlock2.length; i++) {
+                var block = blocksInBlock2[i];
+                if (checkBallCollisionWithSingleBlock(block)) {
+                    return;
+                }
+            }
+            var blocksInBlock1 = document.getElementsByClassName("block1")
+            for (var i = 0; i < blocksInBlock1.length; i++) {
+                var block = blocksInBlock1[i];
+                if (checkBallCollisionWithSingleBlock(block)) {
+                    return;
+                }
+            }
+            // TODO 9: check if the ball is colliding with the green and red blocks
+        }
+
+        function checkBallCollisionWithPaddle() {
+            var paddleDimensions = {
+                left: paddlePosition.left,
+                top: paddlePosition.top,
+                width: 125,
+                height: 20
+
+            };
+
+            if (isCollideWithBall(paddleDimensions) == true) {
+                ballPosition.left = ballPosition.left - ballVelocity.x;
+                ballPosition.top = ballPosition.top - ballVelocity.y;
+                ballVelocity.y = ballVelocity.y * -1;
+                playBallHitPaddleSound()
+
+                // TODO 13: Play a sound effect as the ball has hit the paddle
+            }
+           
+        }
+
+        function playBallHitPaddleSound() {
+            var audio = new Audio('sounds/414888__therealmattix__8bit-laser-shot-04.wav')
+            audio.play();
+        }
+
+        /**
+        Play sound when ball hits the wall
+        */
+        function playBallHitWallSound() {
+            // TODO 5: When the ball hits the left, top or right wall, call
+            // this function to play the bounce sound
+            // Download a soundtrack you like from https://freesound.org
+            // and play it instead of this on
+            var audio = new Audio('sounds/12518__johnlancia__sk1-bd.wav');
+            audio.play();
+        }
+
+        function moveBall() {
+            // Move the ball
+            ballPosition.left += ballVelocity.x * gameSpeed;
+            ballPosition.top += ballVelocity.y * gameSpeed;
+
+            /**
+            Check if its collided with the wall, if true bounce back
+            */
+            if (ballPosition.left < 0) {
+                // If the ball position left is less than 0, is gone passed the left side of the game so we need to bounce
+                // it back. We can do this by flipping its x velocity. Multiplying a number by -1 will do this. For example
+                // 2 * -1 = -2
+                // -6 * -1 = 6
+                // We can use the same technique to bounce the ball off the top and the right wall
+                ballVelocity.x = ballVelocity.x * -1;
+                playBallHitWallSound();
+            }
+            else if (ballPosition.left > 570) {
+                ballVelocity.x = ballVelocity.x * -1;
+                playBallHitWallSound();
+            }
+            else if (ballPosition.top < 0) {
+                ballVelocity.y = ballVelocity.y * -1;
+                playBallHitWallSound();
+            }
+            // Check if it's fallen off the bottom of the game, if true
+            // take 1 life of the player. If lives is 0 show a game over
+            // message with a button to restart the game
+            else if (ballPosition.top > 570) {
+                playerLives = playerLives - 1;
+                console.log(playerLives)
+                    updateLivesUI(playerLives)
+                if (playerLives == 0) {
+                    setTimeout(function() {
+                        gameOver();
+                    }, 1);
+                }
+
+                else {
+                    resetBallAndPaddle();
+                }
+                
+
+            }
+                // TODO 1: Subtrack 1 from the the player lives
+
+                // TODO 2: Call the updateLivesUI() function and complete the TODO
+                // in this function
+
+                // TODO 4: Write an if statment here to check if playerLives is 0.
+                // If it is 0, call the gameOver() function, else call the
+                // resetBallAndPaddle() function()
+
+                // ********* remove this line of code, we don't want the ball to bouce
+
+
+            // ****** Check if its collided with the paddle, if true, bounce back
+            checkBallCollisionWithPaddle();
+
+            // ****** Check if the ball has collided with the blocks
+            checkBallCollisionWithBlocks();
+
+            // Finally update the ball position on the screen
+            ballEl.style["left"] = ballPosition.left + "px";
+            ballEl.style["top"] = ballPosition.top + "px";
+        }
+
+        function movePaddle() {
+            if (keyDown == "right") {
+                paddlePosition.left = paddlePosition.left + 10;
+            }
+            else if (keyDown == "left") {
+                paddlePosition.left = paddlePosition.left -10;
+            }
+
+            if (paddlePosition.left < 0) {
+                // *********
+                // paddleVelocity.x *= -1;
+                paddlePosition.left = 0;
+
+            }
+            else if (paddlePosition.left > 470) {
+                // *******
+                // paddleVelocity.x *= -1;
+                paddlePosition.left = 470;
+            }
+
+            // Finally update the ball position on the screen
+            paddleEl.style["left"] = paddlePosition.left + "px";
+            paddleEl.style["top"] = paddlePosition.top + "px";
+        }
+
+        function gameLoop() {
+            moveBall();
+            movePaddle();
+        }
+
+        // Add event listners to detect when the user presses a key down and releases the key
+        document.addEventListener("keydown", keyDownHandler, false);
+        document.addEventListener("keyup", keyUpHandler, false);
+
+        // Play the main game sound
+        // TODO 6: Download a soundtrack you like from https://www.dl-sounds.com/
+        // and play it instead of this one
+        var audio = new Audio("sounds/Motivated.mp3");
+        audio.loop = true;
+        audio.play();
+
+        // Start by reseting the game state
+        resetGame();
+        // Start the game loop, called every second
+        var intervalHandle = setInterval(function() {
+            gameLoop();
+        }, 16); // Run the game loop over 16 milliseconds. This is approx. 60 frames per second (1000 milliseconds / 60)
+
+        // Increase the speed of the ball every 2000 milliseconds (2 seconds)
+        var velocityHandle = setInterval(function() {
+            gameSpeed *= 1.1;
+        }, 2000);
+    </script>
+</body>
+</html>
